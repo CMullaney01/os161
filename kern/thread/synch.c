@@ -172,6 +172,7 @@ lock_destroy(struct lock *lock)
 void
 lock_acquire(struct lock *lock)
 {
+	HANGMAN_LOCKABLEINIT(&lock->lk_hangman, lock->lk_name);
   int spl;
   assert(lock != NULL);
 	assert(in_interrupt==0);
