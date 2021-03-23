@@ -137,74 +137,79 @@ V(struct semaphore *sem)
 ////////////////////////////////////////////////////////////
 //
 // Lock.
+//HANGMAN_LOCKABLEINIT(&lock->lk_hangman, lock->lk_name);
 
 struct lock *
 lock_create(const char *name)
 {
 	struct lock *lock;
 
-	lock = kmalloc(sizeof(*lock));
+	lock = kmalloc(sizeof(struct lock));
 	if (lock == NULL) {
 		return NULL;
 	}
 
-	lock->lk_name = kstrdup(name);
-	if (lock->lk_name == NULL) {
+	lock->name = kstrdup(name);
+	if (lock->name == NULL) {
 		kfree(lock);
 		return NULL;
 	}
-
-	HANGMAN_LOCKABLEINIT(&lock->lk_hangman, lock->lk_name);
-
-	// add stuff here as needed
-
+	
+  lock->held = 0;
+  lock->holder = NULL;
 	return lock;
 }
 
 void
 lock_destroy(struct lock *lock)
 {
-	KASSERT(lock != NULL);
+	assert(lock != NULL);
 
-	// add stuff here as needed
-
-	kfree(lock->lk_name);
+	kfree(lock->name);
 	kfree(lock);
 }
 
 void
 lock_acquire(struct lock *lock)
 {
-	/* Call this (atomically) before waiting for a lock */
-	//HANGMAN_WAIT(&curthread->t_hangman, &lock->lk_hangman);
+  int spl;
+  assert(lock != NULL);
+	assert(in_interrupt==0);
 
-	// Write this
-
-	(void)lock;  // suppress warning until code gets written
-
-	/* Call this (atomically) once the lock is acquired */
-	//HANGMAN_ACQUIRE(&curthread->t_hangman, &lock->lk_hangman);
+  spl = splhigh();
+  assert(!lock_do_i_hold(lock)); 
+  while (lock->held) {
+    thread_sleep(lock);
+  }
+  lock->holder = curthread;
+  lock->held = 1;
+  splx(spl);
 }
 
 void
 lock_release(struct lock *lock)
 {
-	/* Call this (atomically) when the lock is released */
-	//HANGMAN_RELEASE(&curthread->t_hangman, &lock->lk_hangman);
+  assert(lock != NULL);
+  assert(lock->held);
+  assert(lock_do_i_hold(lock));
 
-	// Write this
-
-	(void)lock;  // suppress warning until code gets written
+  int spl;
+  spl = splhigh();
+  lock->held = 0;
+  lock->holder = NULL;
+  thread_wakeup(lock);
+  splx(spl);
 }
 
-bool
+int
 lock_do_i_hold(struct lock *lock)
 {
-	// Write this
+  assert(lock != NULL);
 
-	(void)lock;  // suppress warning until code gets written
+  if (!lock->held) return 0;
 
-	return true; // dummy until code gets written
+  if (lock->holder == curthread) return 1;
+  else return 0;
 }
 
 ////////////////////////////////////////////////////////////
