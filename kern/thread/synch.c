@@ -235,14 +235,8 @@ lock_do_i_hold(struct lock *lock)
 {
 	KASSERT(lock != NULL);
 	KASSERT(curthread != NULL);
-	spinlock_acquire(&lock->lock_spinlock);
 
-
-	bool to_return = lock->is_held &&	lock->holder_pointer != NULL
-	   && lock->holder_pointer == curthread;
-	   
-  spinlock_release(&lock->lock_spinlock);
-	return to_return;
+	return lock->is_held &&  lock->holder_pointer == curthread;
 
 }
 
