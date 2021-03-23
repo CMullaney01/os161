@@ -240,7 +240,7 @@ lock_do_i_hold(struct lock *lock)
 
 	bool to_return = lock->is_held &&	lock->holder_pointer != NULL
 	   && lock->holder_pointer == curthread;
- //kprintf("do I hold %d \n", (int)(lock->is_held));
+	   
   spinlock_release(&lock->lock_spinlock);
 	return to_return;
 
